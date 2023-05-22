@@ -20,7 +20,7 @@ import (
 func main() {
 	// Decode the JPEG data. If reading from file, create a reader with
 	//
-	reader, err := os.Open("testdata/1.jpg")
+	reader, err := os.Open("testdata/3.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func main() {
 
 	newI := arrToImage(mColor, image.Rect(0, 0, col/2, row-1))
 
-	f, err := os.OpenFile("testout/1.jpeg", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	f, err := os.OpenFile("testout/3.jpeg", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
 	}
