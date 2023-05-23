@@ -20,7 +20,12 @@ import (
 func main() {
 	// Decode the JPEG data. If reading from file, create a reader with
 	//
-	reader, err := os.Open("testdata/3.jpg")
+	if len(os.Args) != 2 && len(os.Args) != 3 {
+		fmt.Println("Usage: prog input-file-name.jpg output-file-name.jpg(optional.Default:./output.jpg)")
+		return
+	}
+
+	reader, err := os.Open(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,14 +37,20 @@ func main() {
 
 	mColor, row, col := imageToArr(m)
 	for i := 0; i < col/2; i++ {
-		fmt.Println(i)
+		//for i := 0; i < 100; i++ {
+		fmt.Println("Start:", i)
 		disMap := calcDis((energyMapGen(mColor)))
 		mColor = removePix(mColor, disMap)
 	}
 
 	newI := arrToImage(mColor, image.Rect(0, 0, col/2, row-1))
+	//newI := arrToImage(mColor, image.Rect(0, 0, col-1-100, row-1))
 
-	f, err := os.OpenFile("testout/3.jpeg", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	outputName := "./output.jpg"
+	if len(os.Args) == 3 {
+		outputName = os.Args[2]
+	}
+	f, err := os.OpenFile(outputName, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +65,6 @@ func imageToArr(m image.Image) ([][]color.Color, int, int) {
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		row++
 		re = append(re, []color.Color{})
-		//fmt.Print("y:", y, "    row:", y-bounds.Min.Y, "  len:", len(re), "\n")
 		col := 0
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			col++
@@ -101,35 +111,35 @@ func calcEnergy(m [][]color.Color, r int, c int) int {
 	cn := c
 	if rn >= 0 && rn < len(m) && cn >= 0 && cn < len(m[0]) {
 		r1, g1, b1, a1 := m[rn][cn].RGBA()
-		e += int(listAbs([]uint32{r0 - r1, g0 - g1, b0 - b1, a0 - a1}))
+		e += int(listAbs([]int64{int64(r0) - int64(r1), int64(g0) - int64(g1), int64(b0) - int64(b1), int64(a0) - int64(a1)}))
 		count++
 	}
 	rn = r + 1
 	cn = c
 	if rn >= 0 && rn < len(m) && cn >= 0 && cn < len(m[0]) {
 		r1, g1, b1, a1 := m[rn][cn].RGBA()
-		e += int(listAbs([]uint32{r0 - r1, g0 - g1, b0 - b1, a0 - a1}))
+		e += int(listAbs([]int64{int64(r0) - int64(r1), int64(g0) - int64(g1), int64(b0) - int64(b1), int64(a0) - int64(a1)}))
 		count++
 	}
 	rn = r
 	cn = c - 1
 	if rn >= 0 && rn < len(m) && cn >= 0 && cn < len(m[0]) {
 		r1, g1, b1, a1 := m[rn][cn].RGBA()
-		e += int(listAbs([]uint32{r0 - r1, g0 - g1, b0 - b1, a0 - a1}))
+		e += int(listAbs([]int64{int64(r0) - int64(r1), int64(g0) - int64(g1), int64(b0) - int64(b1), int64(a0) - int64(a1)}))
 		count++
 	}
 	rn = r
 	cn = c + 1
 	if rn >= 0 && rn < len(m) && cn >= 0 && cn < len(m[0]) {
 		r1, g1, b1, a1 := m[rn][cn].RGBA()
-		e += int(listAbs([]uint32{r0 - r1, g0 - g1, b0 - b1, a0 - a1}))
+		e += int(listAbs([]int64{int64(r0) - int64(r1), int64(g0) - int64(g1), int64(b0) - int64(b1), int64(a0) - int64(a1)}))
 		count++
 	}
-	return e / count
+	return e / count /// (int(a0) / 2)
 }
 
-func listAbs(l []uint32) uint32 {
-	var r uint32 = 0
+func listAbs(l []int64) int64 {
+	var r int64 = 0
 	for _, v := range l {
 		if v < 0 {
 			r = r - v
@@ -175,10 +185,12 @@ func removePix(m [][]color.Color, disMap [][]int) [][]color.Color {
 		}
 	}
 	c--
+	//fmt.Println("Last line:", disMap[len(disMap)-1])
+	//fmt.Println("Choose:", c)
 
 	mN := make([][]color.Color, len(m))
 	for i := 0; i < len(mN); i++ {
-		mN[i] = make([]color.Color, len(m[0]))
+		mN[i] = make([]color.Color, len(m[0])-1)
 		copy(mN[i], m[i])
 	}
 
@@ -187,20 +199,21 @@ func removePix(m [][]color.Color, disMap [][]int) [][]color.Color {
 	}
 
 	for r := len(m) - 2; r >= 0; r-- {
+		//fmt.Println("c:", c, "   len:", len(disMap[r+1]))
 		d1 := disMap[r+1][c-1+1]
 		d2 := disMap[r+1][c+1]
 		d3 := disMap[r+1][c+1+1]
+		//fmt.Println("d1:", d1, "      d2:", d2, "     d3:", d3)
 		cn := 0
 		switch {
-		case d1 < d2 && d1 < d3:
-			cn = c - 1
-		case d2 < d1 && d2 < d3:
+		case d2 <= d1 && d2 <= d3:
 			cn = c
+		case d1 <= d2 && d1 <= d3:
+			cn = c - 1
 		default:
 			cn = c + 1
 		}
 		c = cn
-		//fmt.Println("Cut in col:", cn)
 		for ; cn < len(m[0])-1; cn++ {
 			mN[r][cn] = m[r][cn+1]
 		}
