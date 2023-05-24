@@ -28,13 +28,15 @@ int main (void)
 
 
     unsigned int i;
-    for (i = 1; i <= 1000000; i++)
+    for (i = 1; i <= 10000; i++)
     {
         V g = getGradient(p);
         p = mulV(p, g , t);
     }
     V result = resultCalc(p);
 
+
+    printf("\nPrint result by MPFR:\n");
     printf ("x1*= ");
     mpfr_out_str (stdout, 10, 0, p.x1, MPFR_RNDD);
     printf ("  x2*= ");
@@ -43,6 +45,10 @@ int main (void)
     printf ("f*= ");
     mpfr_out_str (stdout, 10, 0, result.x1, MPFR_RNDD);
     putchar ('\n');
+    
+    printf("\nPrint result by C standard output:\n");
+    printf ("x1*= %.10lf  x2*= %.10lf\nf*= %.10lf\n\n", mpfr_get_d (p.x1, MPFR_RNDD), mpfr_get_d (p.x2, MPFR_RNDD), mpfr_get_d (result.x1, MPFR_RNDD));
+
     mpfr_clear (p.x1);
     mpfr_clear (p.x2);
     mpfr_clear (t);
@@ -192,7 +198,7 @@ V resultCalc(V p) {
     mpfr_init2(r.x1,200);
     mpfr_set_d (r.x1, 0, MPFR_RNDD);
     {
-                mpfr_t v1, v2, v3, v4, a1,a2,a3;
+        mpfr_t v1, v2, v3, v4, a1,a2,a3;
         mpfr_init2(v1,200);
         mpfr_init2(v2,200);
         mpfr_init2(v3,200);
